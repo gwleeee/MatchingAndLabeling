@@ -22,6 +22,10 @@ public:
     bool eventFilter(QObject *watched, QEvent *event);
     void Folder2ImgPrint(QVector<QString> *Folder2FileArr, int *suffledIdx, int iter);
     void Folder1ImgPrint(QVector<QString> *Folder1FileArr, int idx);
+    int ColorExtract(QString filePath);
+    void Folder2ImageColorClassification(QVector<QString> *Folder2FileArr)
+;
+
 private slots:
     void on_pushButton_Folder1_clicked();
 

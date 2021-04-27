@@ -5,6 +5,7 @@ int _iter = 0;
 int _curr_img = 0;
 QVector<QString> Folder1FileArr;
 QVector<QString> Folder2FileArr;
+QVector<QString> Folder2FileArrCls[12];
 int Folder1FileCnt = 0;
 int Folder2FileCnt = 0;
 int *ShuffleIdx;
@@ -51,6 +52,7 @@ void ShufflingNumberTAOCP(int cnt, int *suffledIdx)
 
     printf("\n");
 }
+
 
 void MainWindow::on_pushButton_Folder1_clicked()    // 폴더1 선택 및 경로 출력
 {
@@ -189,7 +191,6 @@ void MainWindow::Folder1ImgPrint(QVector<QString> *Folder1FileArr, int idx)
     ui->label_img->setPixmap(img);
     ui->label_img->setScaledContents(true);
     ui->label_img->setSizePolicy(QSizePolicy::Ignored, QSizePolicy::Ignored);
-
 }
 
 // 폴더2의 이미지 출력
@@ -246,6 +247,7 @@ void MainWindow::on_pushButton_X_clicked()
     qDebug() << _iter;
 }
 
+// O 버튼 클릭 동작
 void MainWindow::on_pushButton_O_clicked()
 {
     if (ui->label_img01->lineWidth() != 1)
@@ -272,4 +274,46 @@ void MainWindow::on_pushButton_O_clicked()
     _iter++;
     Folder2ImgPrint(&Folder2FileArr, ShuffleIdx, _iter);
     qDebug() << _iter;
+}
+
+// 이미지 컬러 추출 (0-11 12 classes)
+int MainWindow::ColorExtract(QString filePath)
+{
+    QImage img;
+    img.load(filePath);
+    // resize
+    img = img.scaled(64,64);
+    qDebug() << img.width() << " " << img.height();
+    int hist[12] = {0,};
+    // convert rgb to hue
+    for (int i = 0; i < img.height(); i++)
+    {
+        for (int j = 0; j < img.width(); j++)
+        {
+            QColor color = img.pixelColor(i, j);
+            int hue = color.hue() / 30;
+            int sat = color.saturation();
+      //      qDebug() << hue;
+            if (sat < 64)
+                hist[hue]++;
+        }
+    }
+    // hist 최대값 찾기
+    int idx = 0;
+    for (int i = 1; i < 12; i++)
+        if (hist[idx] < hist[i])
+            idx = i;
+    return idx;
+}
+
+void MainWindow::Folder2ImageColorClassification(QVector<QString> *Folder2FileArr)
+{
+    QVector<QString> Arr = *Folder2FileArr;
+    int cnt = Arr.length();
+    int cls;
+    for (int i = 0; i < cnt; i++)
+    {
+        cls = ColorExtract(Arr[i]);
+        Folder2FileArrCls[cls].push_back(Arr[i]);
+    }
 }
