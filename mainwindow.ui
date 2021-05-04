@@ -6,8 +6,8 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>800</width>
-    <height>600</height>
+    <width>1086</width>
+    <height>618</height>
    </rect>
   </property>
   <property name="windowTitle">
@@ -18,9 +18,16 @@
     <item row="1" column="0">
      <widget class="QGroupBox" name="groupBox_ImgFolder1">
       <property name="title">
-       <string>An image in Folder 1</string>
+       <string>폴더 1 이미지</string>
       </property>
       <layout class="QGridLayout" name="gridLayout_5">
+       <item row="1" column="0">
+        <widget class="QPushButton" name="pushButton_Next">
+         <property name="text">
+          <string>Next image</string>
+         </property>
+        </widget>
+       </item>
        <item row="0" column="0">
         <widget class="QLabel" name="label_img">
          <property name="frameShape">
@@ -34,10 +41,35 @@
       </layout>
      </widget>
     </item>
+    <item row="2" column="0">
+     <layout class="QVBoxLayout" name="verticalLayout">
+      <item>
+       <widget class="QLabel" name="label_currImgNum">
+        <property name="text">
+         <string>현재 이미지 : </string>
+        </property>
+       </widget>
+      </item>
+      <item>
+       <widget class="QLabel" name="label_currImgMatchCnt">
+        <property name="text">
+         <string>매칭 이미지 수 : </string>
+        </property>
+       </widget>
+      </item>
+     </layout>
+    </item>
+    <item row="2" column="1">
+     <widget class="QPushButton" name="pushButton_O">
+      <property name="text">
+       <string>O</string>
+      </property>
+     </widget>
+    </item>
     <item row="1" column="1" colspan="3">
      <widget class="QGroupBox" name="groupBox_ImgFolder2">
       <property name="title">
-       <string>Images in Folder 2</string>
+       <string>폴더 2 이미지</string>
       </property>
       <layout class="QGridLayout" name="gridLayout_4">
        <item row="0" column="0">
@@ -150,12 +182,55 @@
       </property>
      </widget>
     </item>
-    <item row="0" column="0" colspan="3">
+    <item row="2" column="3">
+     <widget class="QPushButton" name="pushButton_Start">
+      <property name="text">
+       <string>START</string>
+      </property>
+     </widget>
+    </item>
+    <item row="0" column="0" colspan="4">
      <widget class="QGroupBox" name="groupBox_Folder">
+      <property name="sizePolicy">
+       <sizepolicy hsizetype="Preferred" vsizetype="Fixed">
+        <horstretch>0</horstretch>
+        <verstretch>0</verstretch>
+       </sizepolicy>
+      </property>
       <property name="title">
-       <string>폴더 선택</string>
+       <string>설정</string>
       </property>
       <layout class="QGridLayout" name="gridLayout_3">
+       <item row="1" column="3">
+        <layout class="QHBoxLayout" name="horizontalLayout">
+         <item>
+          <widget class="QLabel" name="label_3">
+           <property name="maximumSize">
+            <size>
+             <width>150</width>
+             <height>16777215</height>
+            </size>
+           </property>
+           <property name="text">
+            <string>폴더 2 이미지 전처리</string>
+           </property>
+          </widget>
+         </item>
+         <item>
+          <widget class="QProgressBar" name="progressBar_loading">
+           <property name="maximumSize">
+            <size>
+             <width>150</width>
+             <height>16777215</height>
+            </size>
+           </property>
+           <property name="value">
+            <number>0</number>
+           </property>
+          </widget>
+         </item>
+        </layout>
+       </item>
        <item row="0" column="0">
         <layout class="QGridLayout" name="gridLayout">
          <item row="0" column="0">
@@ -175,7 +250,7 @@
          <item row="0" column="2">
           <widget class="QPushButton" name="pushButton_Folder1">
            <property name="text">
-            <string>Load</string>
+            <string>찾기</string>
            </property>
           </widget>
          </item>
@@ -200,27 +275,43 @@
          <item row="0" column="2">
           <widget class="QPushButton" name="pushButton_Folder2">
            <property name="text">
-            <string>Load</string>
+            <string>찾기</string>
+           </property>
+          </widget>
+         </item>
+        </layout>
+       </item>
+       <item row="0" column="3">
+        <layout class="QHBoxLayout" name="horizontalLayout_2">
+         <item>
+          <widget class="QLabel" name="label_4">
+           <property name="maximumSize">
+            <size>
+             <width>150</width>
+             <height>16777215</height>
+            </size>
+           </property>
+           <property name="text">
+            <string>각 매칭 목표량</string>
+           </property>
+          </widget>
+         </item>
+         <item>
+          <widget class="QSpinBox" name="spinBox">
+           <property name="maximumSize">
+            <size>
+             <width>150</width>
+             <height>16777215</height>
+            </size>
+           </property>
+           <property name="value">
+            <number>10</number>
            </property>
           </widget>
          </item>
         </layout>
        </item>
       </layout>
-     </widget>
-    </item>
-    <item row="2" column="1">
-     <widget class="QPushButton" name="pushButton_O">
-      <property name="text">
-       <string>O</string>
-      </property>
-     </widget>
-    </item>
-    <item row="0" column="3">
-     <widget class="QPushButton" name="pushButton_Start">
-      <property name="text">
-       <string>START</string>
-      </property>
      </widget>
     </item>
    </layout>
@@ -231,7 +322,7 @@
     <rect>
      <x>0</x>
      <y>0</y>
-     <width>800</width>
+     <width>1086</width>
      <height>28</height>
     </rect>
    </property>

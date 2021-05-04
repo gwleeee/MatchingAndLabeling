@@ -1,32 +1,31 @@
 #include "mainwindow.h"
 #include "ui_mainwindow.h"
 
+// global variable
 int _iter = 0;
 int _curr_img = 0;
+int _curr_img_match_cnt = 0;
 QVector<QString> Folder1FileArr;
 QVector<QString> Folder2FileArr;
-QVector<QString> Folder2FileArrCls[12];
+QVector<QString> Folder2FileArrCls[15];
 int Folder1FileCnt = 0;
 int Folder2FileCnt = 0;
 int *ShuffleIdx;
 QString CurrFileName1;
 QString CurrFileName2[10];
+int CurrImgCls;
+bool isNext = false;
+
 
 MainWindow::MainWindow(QWidget *parent)
     : QMainWindow(parent)
     , ui(new Ui::MainWindow)
 {
     ui->setupUi(this);
-    ui->label_img01->installEventFilter(this);
-    ui->label_img02->installEventFilter(this);
-    ui->label_img03->installEventFilter(this);
-    ui->label_img04->installEventFilter(this);
-    ui->label_img05->installEventFilter(this);
-    ui->label_img06->installEventFilter(this);
-    ui->label_img07->installEventFilter(this);
-    ui->label_img08->installEventFilter(this);
-    ui->label_img09->installEventFilter(this);
-    ui->label_img10->installEventFilter(this);
+    QLabel *label_imgs[10] = {ui->label_img01, ui->label_img02, ui->label_img03, ui->label_img04, ui->label_img05,
+                             ui->label_img06, ui->label_img07, ui->label_img08, ui->label_img09, ui->label_img10};
+    for (auto label : label_imgs)
+        label->installEventFilter(this);
 }
 
 MainWindow::~MainWindow()
@@ -37,7 +36,7 @@ MainWindow::~MainWindow()
 void ShufflingNumberTAOCP(int cnt, int *suffledIdx)
 {
     for( int i=0; i < cnt; ++i )
-        suffledIdx[i] = i+1;
+        suffledIdx[i] = i;
 
     for( int i=0; i < cnt; ++i )
     {
@@ -60,7 +59,7 @@ void MainWindow::on_pushButton_Folder1_clicked()    // 폴더1 선택 및 경로
     ui->lineEdit_Folder1->setText(QFolderLocation);
 }
 
-void MainWindow::on_pushButton_Folder2_clicked()    // 폴더2 선택 및 결로 출력
+void MainWindow::on_pushButton_Folder2_clicked()    // 폴더2 선택 및 경로 출력
 {
     QString QFolderLocation = QFileDialog::getExistingDirectory(this, "select folder", QDir::homePath(), QFileDialog::ShowDirsOnly);
     ui->lineEdit_Folder2->setText(QFolderLocation);
@@ -144,7 +143,7 @@ bool MainWindow::eventFilter(QObject *watched, QEvent *event)   // 폴더2 이�
 void MainWindow::on_pushButton_Start_clicked()  // 작업 시작
 {
     // init
-    _curr_img = 0;
+    _curr_img = -1;
     _iter = 0;
     Folder1FileArr.clear();
     Folder2FileArr.clear();
@@ -166,17 +165,17 @@ void MainWindow::on_pushButton_Start_clicked()  // 작업 시작
         if (item.isFile()) // 아이템이 파일인 경우 파suffledIdx일 경로 벡터에 푸쉬
             Folder2FileArr.push_back(item.absoluteFilePath());
     }
-    Folder2FileCnt = Folder2FileArr.length();
+    Folder2FileCnt = Folder2FileArr.length(); // 폴더2 내 파일 개수
 
-    // 폴더 2 파일 목록 셔플
-    ShuffleIdx = (int *)malloc(sizeof(int *)*Folder2FileCnt);        // 파일 리스트의 인덱스를 셔플할 int 배열
-    //qDebug() << Folder2FileCnt;
-    ShufflingNumberTAOCP(Folder2FileCnt, ShuffleIdx);  // 인덱스 셔플
+    // 폴더 2 전처리
+    for (int i = 0; i < Folder2FileCnt; i++)
+    {
+        int idx = ColorExtract(Folder2FileArr[i]);
+        Folder2FileArrCls[idx].push_back(Folder2FileArr[i]);
+        ui->progressBar_loading->setValue(100*(i+1)/Folder2FileCnt);
+    }
 
-    // 폴더 1 이미지 출력
-    Folder1ImgPrint(&Folder1FileArr, _curr_img);
-    // 폴더 2 이미지 출력
-    Folder2ImgPrint(&Folder2FileArr, ShuffleIdx, _iter);
+    on_pushButton_Next_clicked();
 
 }
 
@@ -196,114 +195,184 @@ void MainWindow::Folder1ImgPrint(QVector<QString> *Folder1FileArr, int idx)
 // 폴더2의 이미지 출력
 void MainWindow::Folder2ImgPrint(QVector<QString> *Folder2FileArr, int *suffledIdx, int iter)
 {
+    QLabel *label_imgs[10] = {ui->label_img01, ui->label_img02, ui->label_img03, ui->label_img04, ui->label_img05,
+                             ui->label_img06, ui->label_img07, ui->label_img08, ui->label_img09, ui->label_img10};
     int N = 10;
-    int offset = iter * N;
+    int offset = iter * N - 1;
     QVector<QString> tmp = *Folder2FileArr;
     QPixmap img[N];
     QString fileName[N];
+    int tempLength = Folder2FileArrCls[CurrImgCls].length();
+    int showIdx = 10;
 
     for (int i = 0; i < N; i++)
+    {
+        if (offset + i >= tempLength)
+        {
+            showIdx = i;
+            isNext = true;
+            break;
+        }
+    }
+
+    for (int i = 0; i < showIdx; i++)
     {
         img[i].load(tmp[suffledIdx[offset + i]]);
         CurrFileName2[i] = tmp[suffledIdx[offset + i]].section("/", -1);
     }
-    ui->label_img01->setPixmap(img[0]);
-    ui->label_img02->setPixmap(img[1]);
-    ui->label_img03->setPixmap(img[2]);
-    ui->label_img04->setPixmap(img[3]);
-    ui->label_img05->setPixmap(img[4]);
-    ui->label_img06->setPixmap(img[5]);
-    ui->label_img07->setPixmap(img[6]);
-    ui->label_img08->setPixmap(img[7]);
-    ui->label_img09->setPixmap(img[8]);
-    ui->label_img10->setPixmap(img[9]);
-    ui->label_img01->setScaledContents(true);
-    ui->label_img02->setScaledContents(true);
-    ui->label_img03->setScaledContents(true);
-    ui->label_img04->setScaledContents(true);
-    ui->label_img05->setScaledContents(true);
-    ui->label_img06->setScaledContents(true);
-    ui->label_img07->setScaledContents(true);
-    ui->label_img08->setScaledContents(true);
-    ui->label_img09->setScaledContents(true);
-    ui->label_img10->setScaledContents(true);
-    ui->label_img01->setSizePolicy(QSizePolicy::Ignored, QSizePolicy::Ignored);
-    ui->label_img02->setSizePolicy(QSizePolicy::Ignored, QSizePolicy::Ignored);
-    ui->label_img03->setSizePolicy(QSizePolicy::Ignored, QSizePolicy::Ignored);
-    ui->label_img04->setSizePolicy(QSizePolicy::Ignored, QSizePolicy::Ignored);
-    ui->label_img05->setSizePolicy(QSizePolicy::Ignored, QSizePolicy::Ignored);
-    ui->label_img06->setSizePolicy(QSizePolicy::Ignored, QSizePolicy::Ignored);
-    ui->label_img07->setSizePolicy(QSizePolicy::Ignored, QSizePolicy::Ignored);
-    ui->label_img08->setSizePolicy(QSizePolicy::Ignored, QSizePolicy::Ignored);
-    ui->label_img09->setSizePolicy(QSizePolicy::Ignored, QSizePolicy::Ignored);
-    ui->label_img10->setSizePolicy(QSizePolicy::Ignored, QSizePolicy::Ignored);
+
+    for (int i = 0; i < N; i++)
+    {
+        if (showIdx <= i)
+            label_imgs[i]->setText("");
+        else
+        {
+            label_imgs[i]->setPixmap(img[i]);
+            label_imgs[i]->setScaledContents(true);
+            label_imgs[i]->setSizePolicy(QSizePolicy::Ignored, QSizePolicy::Ignored);
+        }
+    }
 }
 
 // 화면상 매칭되는 이미지가 없는 경우 X를 눌러 다음 iter로 진행
 void MainWindow::on_pushButton_X_clicked()
 {
+    if (isNext)
+        on_pushButton_Next_clicked();
     _iter++;
-    Folder2ImgPrint(&Folder2FileArr, ShuffleIdx, _iter);
-    qDebug() << _iter;
+    Folder2ImgPrint(&Folder2FileArrCls[CurrImgCls], ShuffleIdx, _iter);
+
+ //   qDebug() << _iter;
+    initImageLabelBorder();
 }
 
 // O 버튼 클릭 동작
 void MainWindow::on_pushButton_O_clicked()
 {
-    if (ui->label_img01->lineWidth() != 1)
-        qDebug() << CurrFileName1 << "," << CurrFileName2[0];
-    if (ui->label_img02->lineWidth() != 1)
-        qDebug() << CurrFileName1 << "," << CurrFileName2[1];
-    if (ui->label_img03->lineWidth() != 1)
-        qDebug() << CurrFileName1 << "," << CurrFileName2[2];
-    if (ui->label_img04->lineWidth() != 1)
-        qDebug() << CurrFileName1 << "," << CurrFileName2[3];
-    if (ui->label_img05->lineWidth() != 1)
-        qDebug() << CurrFileName1 << "," << CurrFileName2[4];
-    if (ui->label_img06->lineWidth() != 1)
-        qDebug() << CurrFileName1 << "," << CurrFileName2[5];
-    if (ui->label_img07->lineWidth() != 1)
-        qDebug() << CurrFileName1 << "," << CurrFileName2[6];
-    if (ui->label_img08->lineWidth() != 1)
-        qDebug() << CurrFileName1 << "," << CurrFileName2[7];
-    if (ui->label_img09->lineWidth() != 1)
-        qDebug() << CurrFileName1 << "," << CurrFileName2[8];
-    if (ui->label_img10->lineWidth() != 1)
-        qDebug() << CurrFileName1 << "," << CurrFileName2[9];
+    QLabel *label_imgs[10] = {ui->label_img01, ui->label_img02, ui->label_img03, ui->label_img04, ui->label_img05,
+                             ui->label_img06, ui->label_img07, ui->label_img08, ui->label_img09, ui->label_img10};
 
-    _iter++;
-    Folder2ImgPrint(&Folder2FileArr, ShuffleIdx, _iter);
-    qDebug() << _iter;
+    for (int i = 0; i < 10; i++)
+    {
+         if (label_imgs[i]->lineWidth() != 1)
+         {
+             qDebug() << CurrFileName1 << "," << CurrFileName2[i];
+             _curr_img_match_cnt++;
+         }
+    }
+    initImageLabelBorder();
+    ui->label_currImgMatchCnt->setText("매칭 이미지 수 : " + QVariant(_curr_img_match_cnt).toString() + "/" + QVariant(ui->spinBox->value()).toString());
+    if (_curr_img_match_cnt >= ui->spinBox->value())
+        isNext = true;
+
+    if (isNext)
+        on_pushButton_Next_clicked();
+    else
+    {
+        _iter++;
+        Folder2ImgPrint(&Folder2FileArrCls[CurrImgCls], ShuffleIdx, _iter);
+    }
 }
 
-// 이미지 컬러 추출 (0-11 12 classes)
+// 이미지 컬러 추출 (0-14 12 classes + 무채색 3)
 int MainWindow::ColorExtract(QString filePath)
-{
-    QImage img;
-    img.load(filePath);
-    // resize
-    img = img.scaled(64,64);
-    qDebug() << img.width() << " " << img.height();
-    int hist[12] = {0,};
-    // convert rgb to hue
-    for (int i = 0; i < img.height(); i++)
+{    
+    int idx = 0;
+    Mat dst;
+    Mat3b src = imread(filePath.toStdString());
+
+    cv::resize(src, src, Size(32,32));
+
+    int K = 4;
+    int n = src.rows * src.cols;
+    Mat data = src.reshape(1, n);
+    data.convertTo(data, CV_32F);
+
+    // Kmean 이용 레이블링
+    vector<int> labels;
+    Mat1f colors;
+    kmeans(data, K, labels, cv::TermCriteria(), 1, cv::KMEANS_PP_CENTERS, colors);
+
+    for (int i = 0; i < n; ++i)
     {
-        for (int j = 0; j < img.width(); j++)
+        data.at<float>(i, 0) = colors(labels[i], 0);
+        data.at<float>(i, 1) = colors(labels[i], 1);
+        data.at<float>(i, 2) = colors(labels[i], 2);
+    }
+
+    Mat3b reduced = data.reshape(3, src.rows);
+    reduced.convertTo(dst, CV_8U);
+ //   imshow("reduced color image", dst);
+
+    // Get palette -> 레이블링 값을 RGB로
+    map<Vec3b, int, lessVec3b> palette;
+    for (int r = 0; r < src.rows; ++r)
+    {
+        for (int c = 0; c < src.cols; ++c)
         {
-            QColor color = img.pixelColor(i, j);
-            int hue = color.hue() / 30;
-            int sat = color.saturation();
-      //      qDebug() << hue;
-            if (sat < 64)
-                hist[hue]++;
+            Vec3b color = reduced(r, c);
+            if (palette.count(color) == 0)
+            {
+                palette[color] = 1;
+            }
+            else
+            {
+                palette[color] = palette[color] + 1;
+            }
         }
     }
-    // hist 최대값 찾기
-    int idx = 0;
-    for (int i = 1; i < 12; i++)
-        if (hist[idx] < hist[i])
-            idx = i;
-    return idx;
+    // 가장 빈도수 높은 RGB 색상 추출 (흰색에 근접한 배경은 제외)
+//    int area = src.rows * src.cols;
+    int firstColorIdx, secondColorIdx;
+    vector<int> colorCnt, sortColorCnt;
+    vector<Vec3f> colorVal;
+    Vec3f mainRGB;
+    Vec3f mainHSV;
+    for (auto color : palette)
+    {
+        colorCnt.push_back(color.second);
+        colorVal.push_back(color.first);
+   //     cout << "Color: " << color.first << " \t - Area: " << 100.f * float(color.second) / float(area) << "%" << endl;
+    }
+    sortColorCnt = colorCnt;
+    sort(sortColorCnt.begin(), sortColorCnt.end(), greater<int>());
+    for (int i = 0; i < K; i++)
+    {
+        if (sortColorCnt[0] == colorCnt[i])
+            firstColorIdx = i;
+        else if (sortColorCnt[1] == colorCnt[i])
+            secondColorIdx = i;
+    }
+    if (colorVal[firstColorIdx][0] > 235 && colorVal[firstColorIdx][1] > 235 && colorVal[firstColorIdx][2] > 235)
+        mainRGB = colorVal[secondColorIdx];
+    else
+        mainRGB = colorVal[firstColorIdx];
+
+    // 무채색인 경우
+    int thres = 16;
+    if (abs(mainRGB[0] - mainRGB[1]) < thres && abs(mainRGB[0] - mainRGB[2]) < thres && abs(mainRGB[2] - mainRGB[1]) < thres) // 무채색 조건
+    {
+        if (mainRGB[0] > 191) // white
+            idx = 12;
+        else if (mainRGB[0] > 63) // gray
+            idx = 13;
+        else    // black;
+            idx = 14;
+   //     cout << idx << mainRGB << endl;
+        return idx;
+    }
+    else    // 주 색상을 HSV
+    {
+        Mat_<Vec3f> RGB(mainRGB);
+        Mat_<Vec3f> HSV;
+        cvtColor(RGB, HSV, COLOR_BGR2HSV);
+
+        idx = HSV.at<Vec3f>(0,0)[0] / 30;
+   //     cout << idx << " " << HSV.at<Vec3f>(0,0)[0] << endl;
+        RGB.release();
+        HSV.release();
+        return idx;
+    }
 }
 
 void MainWindow::Folder2ImageColorClassification(QVector<QString> *Folder2FileArr)
@@ -316,4 +385,44 @@ void MainWindow::Folder2ImageColorClassification(QVector<QString> *Folder2FileAr
         cls = ColorExtract(Arr[i]);
         Folder2FileArrCls[cls].push_back(Arr[i]);
     }
+}
+
+void MainWindow::on_pushButton_Next_clicked()
+{
+    isNext = false;
+    _iter = 0;
+    _curr_img_match_cnt = 0;
+    initImageLabelBorder();
+    _curr_img++;
+    // status 출력
+    ui->label_currImgNum->setText("현재 이미지 : " + QVariant(_curr_img + 1).toString() + "/" + QVariant(Folder1FileCnt).toString());
+    ui->label_currImgMatchCnt->setText("매칭 이미지 수 : " + QVariant(_curr_img_match_cnt).toString() + "/" + QVariant(ui->spinBox->value()).toString());
+    // _curr_img 색상 인덱스 검출
+    CurrImgCls = ColorExtract(Folder1FileArr[_curr_img]);
+    // 같은 색상 이미지인 파일목록 크기
+    int Folder2FileCntCls = Folder2FileArrCls[CurrImgCls].length();
+
+    // 폴더 2 파일 목록 셔플
+    ShuffleIdx = (int *)malloc(sizeof(int *)*Folder2FileCntCls);        // 파일 리스트의 인덱스를 셔플할 int 배열
+    //qDebug() << Folder2FileCnt;
+    ShufflingNumberTAOCP(Folder2FileCntCls, ShuffleIdx);  // 인덱스 셔플
+
+    // 폴더 1 이미지 출력
+    Folder1ImgPrint(&Folder1FileArr, _curr_img);
+    // 폴더 2 이미지 출력
+    Folder2ImgPrint(&Folder2FileArrCls[CurrImgCls], ShuffleIdx, _iter);
+}
+
+void MainWindow::initImageLabelBorder()
+{
+    ui->label_img01->setLineWidth(1);
+    ui->label_img02->setLineWidth(1);
+    ui->label_img03->setLineWidth(1);
+    ui->label_img04->setLineWidth(1);
+    ui->label_img05->setLineWidth(1);
+    ui->label_img06->setLineWidth(1);
+    ui->label_img07->setLineWidth(1);
+    ui->label_img08->setLineWidth(1);
+    ui->label_img09->setLineWidth(1);
+    ui->label_img10->setLineWidth(1);
 }

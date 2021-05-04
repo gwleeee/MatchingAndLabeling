@@ -7,6 +7,20 @@
 #include<qfiledialog.h>
 #include<qdialog.h>
 #include <QDebug>
+#include <opencv2/opencv.hpp>
+#include <opencv2/highgui.hpp>
+#include <iostream>
+#include <algorithm>
+using namespace cv;
+using namespace std;
+
+// color component
+struct lessVec3b
+{
+    bool operator()(const Vec3b& lhs, const Vec3b& rhs) const {
+        return (lhs[0] != rhs[0]) ? (lhs[0] < rhs[0]) : ((lhs[1] != rhs[1]) ? (lhs[1] < rhs[1]) : (lhs[2] < rhs[2]));
+    }
+};
 
 QT_BEGIN_NAMESPACE
 namespace Ui { class MainWindow; }
@@ -23,8 +37,9 @@ public:
     void Folder2ImgPrint(QVector<QString> *Folder2FileArr, int *suffledIdx, int iter);
     void Folder1ImgPrint(QVector<QString> *Folder1FileArr, int idx);
     int ColorExtract(QString filePath);
-    void Folder2ImageColorClassification(QVector<QString> *Folder2FileArr)
-;
+    void Folder2ImageColorClassification(QVector<QString> *Folder2FileArr);
+    void initImageLabelBorder();
+
 
 private slots:
     void on_pushButton_Folder1_clicked();
@@ -36,6 +51,9 @@ private slots:
     void on_pushButton_X_clicked();
 
     void on_pushButton_O_clicked();
+
+    void on_pushButton_Next_clicked();
+
 
 private:
     Ui::MainWindow *ui;
