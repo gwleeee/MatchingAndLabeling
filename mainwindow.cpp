@@ -4,6 +4,7 @@
 // global variable
 int _iter = 0;
 int _curr_img = 0;
+int _curr_img_match_cnt = 0;
 QVector<QString> Folder1FileArr;
 QVector<QString> Folder2FileArr;
 QVector<QString> Folder2FileArrCls[15];
@@ -248,35 +249,29 @@ void MainWindow::on_pushButton_X_clicked()
 // O 버튼 클릭 동작
 void MainWindow::on_pushButton_O_clicked()
 {
-    if (ui->label_img01->lineWidth() != 1)
-        qDebug() << CurrFileName1 << "," << CurrFileName2[0];
-    if (ui->label_img02->lineWidth() != 1)
-        qDebug() << CurrFileName1 << "," << CurrFileName2[1];
-    if (ui->label_img03->lineWidth() != 1)
-        qDebug() << CurrFileName1 << "," << CurrFileName2[2];
-    if (ui->label_img04->lineWidth() != 1)
-        qDebug() << CurrFileName1 << "," << CurrFileName2[3];
-    if (ui->label_img05->lineWidth() != 1)
-        qDebug() << CurrFileName1 << "," << CurrFileName2[4];
-    if (ui->label_img06->lineWidth() != 1)
-        qDebug() << CurrFileName1 << "," << CurrFileName2[5];
-    if (ui->label_img07->lineWidth() != 1)
-        qDebug() << CurrFileName1 << "," << CurrFileName2[6];
-    if (ui->label_img08->lineWidth() != 1)
-        qDebug() << CurrFileName1 << "," << CurrFileName2[7];
-    if (ui->label_img09->lineWidth() != 1)
-        qDebug() << CurrFileName1 << "," << CurrFileName2[8];
-    if (ui->label_img10->lineWidth() != 1)
-        qDebug() << CurrFileName1 << "," << CurrFileName2[9];
+    QLabel *label_imgs[10] = {ui->label_img01, ui->label_img02, ui->label_img03, ui->label_img04, ui->label_img05,
+                             ui->label_img06, ui->label_img07, ui->label_img08, ui->label_img09, ui->label_img10};
+
+    for (int i = 0; i < 10; i++)
+    {
+         if (label_imgs[i]->lineWidth() != 1)
+         {
+             qDebug() << CurrFileName1 << "," << CurrFileName2[i];
+             _curr_img_match_cnt++;
+         }
+    }
+    initImageLabelBorder();
+    ui->label_currImgMatchCnt->setText("매칭 이미지 수 : " + QVariant(_curr_img_match_cnt).toString() + "/" + QVariant(ui->spinBox->value()).toString());
+    if (_curr_img_match_cnt >= ui->spinBox->value())
+        isNext = true;
 
     if (isNext)
         on_pushButton_Next_clicked();
-
-    _iter++;
-    Folder2ImgPrint(&Folder2FileArrCls[CurrImgCls], ShuffleIdx, _iter);
-
-  //  qDebug() << _iter;
-    initImageLabelBorder();
+    else
+    {
+        _iter++;
+        Folder2ImgPrint(&Folder2FileArrCls[CurrImgCls], ShuffleIdx, _iter);
+    }
 }
 
 // 이미지 컬러 추출 (0-14 12 classes + 무채색 3)
@@ -307,7 +302,6 @@ int MainWindow::ColorExtract(QString filePath)
 
     Mat3b reduced = data.reshape(3, src.rows);
     reduced.convertTo(dst, CV_8U);
-
  //   imshow("reduced color image", dst);
 
     // Get palette -> 레이블링 값을 RGB로
@@ -327,7 +321,6 @@ int MainWindow::ColorExtract(QString filePath)
             }
         }
     }
-
     // 가장 빈도수 높은 RGB 색상 추출 (흰색에 근접한 배경은 제외)
 //    int area = src.rows * src.cols;
     int firstColorIdx, secondColorIdx;
@@ -380,11 +373,6 @@ int MainWindow::ColorExtract(QString filePath)
         HSV.release();
         return idx;
     }
-    dst.release();
-    src.release();
-    data.release();
-    colors.release();
-    reduced.release();
 }
 
 void MainWindow::Folder2ImageColorClassification(QVector<QString> *Folder2FileArr)
@@ -403,8 +391,12 @@ void MainWindow::on_pushButton_Next_clicked()
 {
     isNext = false;
     _iter = 0;
+    _curr_img_match_cnt = 0;
     initImageLabelBorder();
     _curr_img++;
+    // status 출력
+    ui->label_currImgNum->setText("현재 이미지 : " + QVariant(_curr_img + 1).toString() + "/" + QVariant(Folder1FileCnt).toString());
+    ui->label_currImgMatchCnt->setText("매칭 이미지 수 : " + QVariant(_curr_img_match_cnt).toString() + "/" + QVariant(ui->spinBox->value()).toString());
     // _curr_img 색상 인덱스 검출
     CurrImgCls = ColorExtract(Folder1FileArr[_curr_img]);
     // 같은 색상 이미지인 파일목록 크기
