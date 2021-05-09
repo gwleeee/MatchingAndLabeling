@@ -1,16 +1,26 @@
 #ifndef MAINWINDOW_H
 #define MAINWINDOW_H
 
+// QT
 #include <QMainWindow>
 #include <QMouseEvent>
-#include<QtWidgets/QDialog>
-#include<qfiledialog.h>
-#include<qdialog.h>
 #include <QDebug>
+#include <QtWidgets/QDialog>
+#include <QFile>
+#include <QTimer>
+#include <qfiledialog.h>
+#include <qdialog.h>
+#include <qmessagebox.h>
+
+// opencv
 #include <opencv2/opencv.hpp>
 #include <opencv2/highgui.hpp>
+
+// cpp
 #include <iostream>
 #include <algorithm>
+
+
 using namespace cv;
 using namespace std;
 
@@ -40,19 +50,14 @@ public:
     void Folder2ImageColorClassification(QVector<QString> *Folder2FileArr);
     void initImageLabelBorder();
 
-
 private slots:
     void on_pushButton_Folder1_clicked();
-
     void on_pushButton_Folder2_clicked();
-
     void on_pushButton_Start_clicked();
-
     void on_pushButton_X_clicked();
-
     void on_pushButton_O_clicked();
-
     void on_pushButton_Next_clicked();
+    void OnTimerCallbackFunc();
 
 
 private:
