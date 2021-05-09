@@ -15,7 +15,8 @@ QString CurrFileName1;
 QString CurrFileName2[10];
 int CurrImgCls;
 bool isNext = false;
-
+QFile file;
+shared_ptr<QTimer> m_pTimer = make_shared<QTimer>();
 
 MainWindow::MainWindow(QWidget *parent)
     : QMainWindow(parent)
@@ -64,77 +65,26 @@ void MainWindow::on_pushButton_Folder2_clicked()    // 폴더2 선택 및 경로
     QString QFolderLocation = QFileDialog::getExistingDirectory(this, "select folder", QDir::homePath(), QFileDialog::ShowDirsOnly);
     ui->lineEdit_Folder2->setText(QFolderLocation);
 }
+
 bool MainWindow::eventFilter(QObject *watched, QEvent *event)   // 폴더2 이미지 선택시 굵게 표시
 {
-    if(watched == ui->label_img01 && event->type() == QMouseEvent::MouseButtonPress)
+    QLabel *label_imgs[10] = {ui->label_img01, ui->label_img02, ui->label_img03, ui->label_img04, ui->label_img05,
+                             ui->label_img06, ui->label_img07, ui->label_img08, ui->label_img09, ui->label_img10};
+    for (int i = 0; i < 10; i++)
     {
-        if (ui->label_img01->lineWidth() == 1)
-            ui->label_img01->setLineWidth(4);
-        else
-            ui->label_img01->setLineWidth(1);
-    }
-    if(watched == ui->label_img02 && event->type() == QMouseEvent::MouseButtonPress)
-    {
-        if (ui->label_img02->lineWidth() == 1)
-            ui->label_img02->setLineWidth(4);
-        else
-            ui->label_img02->setLineWidth(1);
-    }
-    if(watched == ui->label_img03 && event->type() == QMouseEvent::MouseButtonPress)
-    {
-        if (ui->label_img03->lineWidth() == 1)
-            ui->label_img03->setLineWidth(4);
-        else
-            ui->label_img03->setLineWidth(1);
-    }
-    if(watched == ui->label_img04 && event->type() == QMouseEvent::MouseButtonPress)
-    {
-        if (ui->label_img04->lineWidth() == 1)
-            ui->label_img04->setLineWidth(4);
-        else
-            ui->label_img04->setLineWidth(1);
-    }
-    if(watched == ui->label_img05 && event->type() == QMouseEvent::MouseButtonPress)
-    {
-        if (ui->label_img05->lineWidth() == 1)
-            ui->label_img05->setLineWidth(4);
-        else
-            ui->label_img05->setLineWidth(1);
-    }
-    if(watched == ui->label_img06 && event->type() == QMouseEvent::MouseButtonPress)
-    {
-        if (ui->label_img06->lineWidth() == 1)
-            ui->label_img06->setLineWidth(4);
-        else
-            ui->label_img06->setLineWidth(1);
-    }
-    if(watched == ui->label_img07 && event->type() == QMouseEvent::MouseButtonPress)
-    {
-        if (ui->label_img07->lineWidth() == 1)
-            ui->label_img07->setLineWidth(4);
-        else
-            ui->label_img07->setLineWidth(1);
-    }
-    if(watched == ui->label_img08 && event->type() == QMouseEvent::MouseButtonPress)
-    {
-        if (ui->label_img08->lineWidth() == 1)
-            ui->label_img08->setLineWidth(4);
-        else
-            ui->label_img08->setLineWidth(1);
-    }
-    if(watched == ui->label_img09 && event->type() == QMouseEvent::MouseButtonPress)
-    {
-        if (ui->label_img09->lineWidth() == 1)
-            ui->label_img09->setLineWidth(4);
-        else
-            ui->label_img09->setLineWidth(1);
-    }
-    if(watched == ui->label_img10 && event->type() == QMouseEvent::MouseButtonPress)
-    {
-        if (ui->label_img10->lineWidth() == 1)
-            ui->label_img10->setLineWidth(4);
-        else
-            ui->label_img10->setLineWidth(1);
+        if (watched == label_imgs[i] && event->type() == QMouseEvent::MouseButtonPress)
+        {
+            if (label_imgs[i]->lineWidth() == 1)
+            {
+                label_imgs[i]->setLineWidth(4);
+                label_imgs[i]->setStyleSheet("border: 4px solid red");
+            }
+            else
+            {
+                label_imgs[i]->setLineWidth(1);
+                label_imgs[i]->setStyleSheet("border: 1px solid black");
+            }
+        }
     }
     return QWidget::eventFilter(watched, event);
 }
@@ -153,7 +103,11 @@ void MainWindow::on_pushButton_Start_clicked()  // 작업 시작
     QDir Folder1Dir(ui->lineEdit_Folder1->text());
     foreach(QFileInfo item, Folder1Dir.entryInfoList())
     {
-        if (item.isFile()) // 아이템이 파일인 경우 파일 경로 벡터에 푸쉬
+        if (item.isFile() && (
+                    item.completeSuffix() == "jpg" ||
+                    item.completeSuffix() == "png" ||
+                    item.completeSuffix() == "jpeg" ||
+                    item.completeSuffix() == "gif")) // 아이템이 파일인 경우 파일 경로 벡터에 푸쉬
             Folder1FileArr.push_back(item.absoluteFilePath());
     }
     Folder1FileCnt = Folder1FileArr.length();
@@ -177,6 +131,15 @@ void MainWindow::on_pushButton_Start_clicked()  // 작업 시작
 
     on_pushButton_Next_clicked();
 
+
+    // log file open
+    QString Folder1Name = ui->lineEdit_Folder1->text().section("/", -1);
+    file.setFileName(Folder1Name + ".csv");
+    if(!file.open(QFile::WriteOnly | QFile::Text))
+    {
+        qDebug() << " Could not open *.csv file for writing";
+        return;
+    }
 }
 
 // 폴더1의 이미지 출력
@@ -251,11 +214,12 @@ void MainWindow::on_pushButton_O_clicked()
 {
     QLabel *label_imgs[10] = {ui->label_img01, ui->label_img02, ui->label_img03, ui->label_img04, ui->label_img05,
                              ui->label_img06, ui->label_img07, ui->label_img08, ui->label_img09, ui->label_img10};
-
+    QTextStream out(&file);
     for (int i = 0; i < 10; i++)
     {
          if (label_imgs[i]->lineWidth() != 1)
          {
+             out << CurrFileName1 << "," << CurrFileName2[i] << endl;
              qDebug() << CurrFileName1 << "," << CurrFileName2[i];
              _curr_img_match_cnt++;
          }
@@ -274,7 +238,7 @@ void MainWindow::on_pushButton_O_clicked()
     }
 }
 
-// 이미지 컬러 추출 (0-14 12 classes + 무채색 3)
+// 이미지 컬러 인덱스 추출 (0-14 12 classes + 무채색 3)
 int MainWindow::ColorExtract(QString filePath)
 {    
     int idx = 0;
@@ -387,6 +351,11 @@ void MainWindow::Folder2ImageColorClassification(QVector<QString> *Folder2FileAr
     }
 }
 
+void MainWindow::OnTimerCallbackFunc()
+{
+    qDebug() << m_pTimer->remainingTime() << endl;
+}
+
 void MainWindow::on_pushButton_Next_clicked()
 {
     isNext = false;
@@ -394,35 +363,47 @@ void MainWindow::on_pushButton_Next_clicked()
     _curr_img_match_cnt = 0;
     initImageLabelBorder();
     _curr_img++;
-    // status 출력
-    ui->label_currImgNum->setText("현재 이미지 : " + QVariant(_curr_img + 1).toString() + "/" + QVariant(Folder1FileCnt).toString());
-    ui->label_currImgMatchCnt->setText("매칭 이미지 수 : " + QVariant(_curr_img_match_cnt).toString() + "/" + QVariant(ui->spinBox->value()).toString());
-    // _curr_img 색상 인덱스 검출
-    CurrImgCls = ColorExtract(Folder1FileArr[_curr_img]);
-    // 같은 색상 이미지인 파일목록 크기
-    int Folder2FileCntCls = Folder2FileArrCls[CurrImgCls].length();
 
-    // 폴더 2 파일 목록 셔플
-    ShuffleIdx = (int *)malloc(sizeof(int *)*Folder2FileCntCls);        // 파일 리스트의 인덱스를 셔플할 int 배열
-    //qDebug() << Folder2FileCnt;
-    ShufflingNumberTAOCP(Folder2FileCntCls, ShuffleIdx);  // 인덱스 셔플
+    // 폴더 1내의 모든 이미지를 소모한 경우
+    if (_curr_img >= Folder1FileCnt)
+    {
+        QMessageBox::information(this, "", "완료");
+        file.flush();
+        file.close();
+    }
+    else
+    {
+        // Timer
+        connect(m_pTimer.get(), SIGNAL(timeout()), this, SLOT(OnTimerCallbackFunc()));
+        m_pTimer->start(ui->spinBox_timeLimit->value());
+        ui->progressBar_remainingTime->setMaximum(ui->spinBox_timeLimit->value());
+        // status 출력
+        ui->label_currImgNum->setText("현재 이미지 : " + QVariant(_curr_img + 1).toString() + "/" + QVariant(Folder1FileCnt).toString());
+        ui->label_currImgMatchCnt->setText("매칭 이미지 수 : " + QVariant(_curr_img_match_cnt).toString() + "/" + QVariant(ui->spinBox->value()).toString());
+        // _curr_img 색상 인덱스 검출
+        CurrImgCls = ColorExtract(Folder1FileArr[_curr_img]);
+        // 같은 색상 이미지인 파일목록 크기
+        int Folder2FileCntCls = Folder2FileArrCls[CurrImgCls].length();
 
-    // 폴더 1 이미지 출력
-    Folder1ImgPrint(&Folder1FileArr, _curr_img);
-    // 폴더 2 이미지 출력
-    Folder2ImgPrint(&Folder2FileArrCls[CurrImgCls], ShuffleIdx, _iter);
+        // 폴더 2 파일 목록 셔플
+        ShuffleIdx = (int *)malloc(sizeof(int *)*Folder2FileCntCls);        // 파일 리스트의 인덱스를 셔플할 int 배열
+        //qDebug() << Folder2FileCnt;
+        ShufflingNumberTAOCP(Folder2FileCntCls, ShuffleIdx);  // 인덱스 셔플
+
+        // 폴더 1 이미지 출력
+        Folder1ImgPrint(&Folder1FileArr, _curr_img);
+        // 폴더 2 이미지 출력
+        Folder2ImgPrint(&Folder2FileArrCls[CurrImgCls], ShuffleIdx, _iter);
+    }
 }
 
 void MainWindow::initImageLabelBorder()
 {
-    ui->label_img01->setLineWidth(1);
-    ui->label_img02->setLineWidth(1);
-    ui->label_img03->setLineWidth(1);
-    ui->label_img04->setLineWidth(1);
-    ui->label_img05->setLineWidth(1);
-    ui->label_img06->setLineWidth(1);
-    ui->label_img07->setLineWidth(1);
-    ui->label_img08->setLineWidth(1);
-    ui->label_img09->setLineWidth(1);
-    ui->label_img10->setLineWidth(1);
+    QLabel *label_imgs[10] = {ui->label_img01, ui->label_img02, ui->label_img03, ui->label_img04, ui->label_img05,
+                             ui->label_img06, ui->label_img07, ui->label_img08, ui->label_img09, ui->label_img10};
+    for (int i = 0; i < 10; i++)
+    {
+        label_imgs[i]->setLineWidth(1);
+        label_imgs[i]->setStyleSheet("border: solid black");
+    }
 }
