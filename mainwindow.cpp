@@ -16,7 +16,7 @@ QString CurrFileName2[10];
 int CurrImgCls;
 bool isNext = false;
 QFile file;
-shared_ptr<QTimer> m_pTimer = make_shared<QTimer>();
+shared_ptr<QTimer> m_pTimer;
 
 MainWindow::MainWindow(QWidget *parent)
     : QMainWindow(parent)
@@ -27,6 +27,7 @@ MainWindow::MainWindow(QWidget *parent)
                              ui->label_img06, ui->label_img07, ui->label_img08, ui->label_img09, ui->label_img10};
     for (auto label : label_imgs)
         label->installEventFilter(this);
+    this->setWindowTitle("MatchingAndLabeling");
 }
 
 MainWindow::~MainWindow()
@@ -353,7 +354,12 @@ void MainWindow::Folder2ImageColorClassification(QVector<QString> *Folder2FileAr
 
 void MainWindow::OnTimerCallbackFunc()
 {
-    qDebug() << m_pTimer->remainingTime() << endl;
+    int remainTime = ui->progressBar_remainingTime->value() - 1;
+    if (remainTime <= 0)
+        on_pushButton_Next_clicked();
+
+    else
+        ui->progressBar_remainingTime->setValue(ui->progressBar_remainingTime->value() - 1);
 }
 
 void MainWindow::on_pushButton_Next_clicked()
@@ -374,9 +380,12 @@ void MainWindow::on_pushButton_Next_clicked()
     else
     {
         // Timer
+        m_pTimer = make_shared<QTimer>();
         connect(m_pTimer.get(), SIGNAL(timeout()), this, SLOT(OnTimerCallbackFunc()));
-        m_pTimer->start(ui->spinBox_timeLimit->value());
+        m_pTimer->start(1000);
         ui->progressBar_remainingTime->setMaximum(ui->spinBox_timeLimit->value());
+        ui->progressBar_remainingTime->setValue(ui->spinBox_timeLimit->value());
+
         // status 출력
         ui->label_currImgNum->setText("현재 이미지 : " + QVariant(_curr_img + 1).toString() + "/" + QVariant(Folder1FileCnt).toString());
         ui->label_currImgMatchCnt->setText("매칭 이미지 수 : " + QVariant(_curr_img_match_cnt).toString() + "/" + QVariant(ui->spinBox->value()).toString());
